@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Henvendelser</h1>
+  <ul id="liste"></ul>
+
+  <script>
+    async function hent() {
+      const res = await fetch('/api/arrivals');
+      const arrivals = await res.json();
+
+      const liste = document.getElementById('liste');
+      liste.innerHTML = '';
+
+      arrivals.forEach(a => {
+        const li = document.createElement('li');
+        li.textContent = `${a.name} (${a.phone}) kl. ${a.arrivalTime} - ${a.status} `;
+
+        if (a.status === 'afventer') {
+          const knap = document.createElement('button');
+          knap.textContent = 'Godkend';
+          knap.onclick = () => godkend(a.id);
+          li.appendChild(knap);
+        }
+
+        liste.appendChild(li);
+      });
+    }
+
+    async function godkend(id) {
+      await fetch(`/api/arrivals/${id}`, { method: 'PUT' });
+      hent();
+    }
+
+    hent();
+  </script>
+</body>
+</html>

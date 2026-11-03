@@ -38,4 +38,9 @@ app.get('/api/arrivals', async (req, res) => {
   res.json(arrivals);
 });
 
+app.put('/api/arrivals/:id', async (req, res) => {
+  await db.run('UPDATE arrivals SET status = ? WHERE id = ?', ['godkendt', req.params.id]);
+  res.json({ besked: 'Godkendt' });
+});
+
 start();
