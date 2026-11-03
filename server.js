@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
@@ -11,7 +12,16 @@ app.use(cookieParser());
 app.use(express.static('public'));
 
 let db;
-const sessions = new Set(); // aktive login-nøgler
+const sessions = new Set();
+const AES_KEY = Buffer.from(process.env.AES_KEY, 'hex');
+
+// AES: krypterer en tekst med nøglen og en tilfældig IV
+function krypter(tekst) {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-cbc', AES_KEY, iv);
+  const krypteret = cipher.update(tekst, 'utf8', 'hex') + cipher.final('hex');
+  return iv.toString('hex') + ':' + krypteret;
+}
 
 async function start() {
   db = await open({ filename: 'database.db', driver: sqlite3.Database });
@@ -22,7 +32,8 @@ async function start() {
       name TEXT,
       phone TEXT,
       arrivalTime TEXT,
-      status TEXT DEFAULT 'afventer'
+      status TEXT DEFAULT 'afventer',
+      doorCode TEXT
     )
   `);
 
@@ -34,17 +45,15 @@ async function start() {
     )
   `);
 
-  // Opret en personalebruger første gang (midlertidigt password)
   const findes = await db.get('SELECT * FROM users WHERE username = ?', ['personale']);
   if (!findes) {
-    const hash = await bcrypt.hash('hotel123', 10);
+    const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
     await db.run('INSERT INTO users (username, password) VALUES (?, ?)', ['personale', hash]);
   }
 
   app.listen(3000, () => console.log('Kører på http://localhost:3000'));
 }
 
-// Middleware: tjekker om personalet er logget ind
 function kraeverLogin(req, res, next) {
   if (sessions.has(req.cookies.token)) return next();
   res.status(401).json({ besked: 'Ikke logget ind' });
@@ -74,12 +83,16 @@ app.post('/api/arrivals', async (req, res) => {
 });
 
 app.get('/api/arrivals', kraeverLogin, async (req, res) => {
-  const arrivals = await db.all('SELECT * FROM arrivals');
+  const arrivals = await db.all('SELECT id, name, phone, arrivalTime, status FROM arrivals');
   res.json(arrivals);
 });
 
 app.put('/api/arrivals/:id', kraeverLogin, async (req, res) => {
-  await db.run('UPDATE arrivals SET status = ? WHERE id = ?', ['godkendt', req.params.id]);
+  const doorCode = crypto.randomInt(1000, 10000).toString();
+  await db.run(
+    'UPDATE arrivals SET status = ?, doorCode = ? WHERE id = ?',
+    ['godkendt', krypter(doorCode), req.params.id]
+  );
   res.json({ besked: 'Godkendt' });
 });
 
