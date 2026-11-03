@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Sen ankomst</h1>
+  <form id="form">
+    <input id="name" placeholder="Navn">
+    <input id="phone" placeholder="Telefon">
+    <input id="arrivalTime" type="time">
+    <button>Send</button>
+  </form>
+  <p id="svar"></p>
+
+  <script>
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch('/api/arrivals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('name').value,
+          phone: document.getElementById('phone').value,
+          arrivalTime: document.getElementById('arrivalTime').value
+        })
+      });
+      const data = await res.json();
+      document.getElementById('svar').textContent = data.besked;
+    });
+  </script>
+</body>
+</html>
