@@ -2,13 +2,27 @@
 <html>
 <body>
   <h1>Henvendelser</h1>
+
+  <form id="login" style="display:none">
+    <input id="username" placeholder="Brugernavn">
+    <input id="password" type="password" placeholder="Password">
+    <button>Log ind</button>
+    <p id="fejl"></p>
+  </form>
+
   <ul id="liste"></ul>
 
   <script>
     async function hent() {
       const res = await fetch('/api/arrivals');
-      const arrivals = await res.json();
 
+      if (res.status === 401) {
+        document.getElementById('login').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('login').style.display = 'none';
+      const arrivals = await res.json();
       const liste = document.getElementById('liste');
       liste.innerHTML = '';
 
@@ -31,6 +45,21 @@
       await fetch(`/api/arrivals/${id}`, { method: 'PUT' });
       hent();
     }
+
+    document.getElementById('login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value
+        })
+      });
+
+      if (res.ok) hent();
+      else document.getElementById('fejl').textContent = 'Forkert login';
+    });
 
     hent();
   </script>
