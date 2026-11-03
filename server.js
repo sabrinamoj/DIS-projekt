@@ -5,8 +5,19 @@ const { open } = require('sqlite');
 const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
+const twilio = require('twilio');
 
 const app = express();
+
+// Middleware: logger metode, URL, statuskode og responstid
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    console.log(`${req.method} ${req.url} ${res.statusCode} ${Date.now() - start}ms`);
+  });
+  next();
+});
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static('public'));
@@ -14,13 +25,39 @@ app.use(express.static('public'));
 let db;
 const sessions = new Set();
 const AES_KEY = Buffer.from(process.env.AES_KEY, 'hex');
+const sms = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
 
-// AES: krypterer en tekst med nøglen og en tilfældig IV
+// AES: krypterer med nøglen og en tilfældig IV
 function krypter(tekst) {
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-cbc', AES_KEY, iv);
   const krypteret = cipher.update(tekst, 'utf8', 'hex') + cipher.final('hex');
   return iv.toString('hex') + ':' + krypteret;
+}
+
+// AES: dekrypterer med den samme nøgle og den gemte IV
+function dekrypter(data) {
+  const [ivHex, krypteret] = data.split(':');
+  const decipher = crypto.createDecipheriv('aes-256-cbc', AES_KEY, Buffer.from(ivHex, 'hex'));
+  return decipher.update(krypteret, 'hex', 'utf8') + decipher.final('utf8');
+}
+
+// Sender dørkoden som SMS via Twilio
+async function sendDoerkode(id) {
+  try {
+    const arrival = await db.get('SELECT phone, doorCode FROM arrivals WHERE id = ?', [id]);
+    const kode = dekrypter(arrival.doorCode);
+    const nummer = arrival.phone.startsWith('+') ? arrival.phone : '+45' + arrival.phone;
+
+    await sms.messages.create({
+      from: process.env.TWILIO_NUMBER,
+      to: nummer,
+      body: `Velkommen. Jeres dørkode er ${kode}.`
+    });
+    console.log(`SMS sendt til ${nummer}`);
+  } catch (fejl) {
+    console.log('SMS fejlede:', fejl.message);
+  }
 }
 
 async function start() {
@@ -94,6 +131,8 @@ app.put('/api/arrivals/:id', kraeverLogin, async (req, res) => {
     ['godkendt', krypter(doorCode), req.params.id]
   );
   res.json({ besked: 'Godkendt' });
+
+  sendDoerkode(req.params.id); // sendes efter svaret, uden await
 });
 
 start();
