@@ -1,13 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sen ankomst</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
 <body>
-  <h1>Sen ankomst</h1>
-  <form id="form">
-    <input id="name" placeholder="Navn">
-    <input id="phone" placeholder="Telefon">
-    <input id="arrivalTime" type="time">
-    <button>Send</button>
+  <h1>Velkommen til hotellet</h1>
+  <p class="intro">Receptionen lukker kl. 22.00. Udfyld formularen, så sender vi jer en dørkode på SMS, når jeres ankomst er godkendt.</p>
+
+  <form id="form" class="kort">
+    <div class="felt">
+      <label for="name">Navn</label>
+      <input id="name" placeholder="Fx Anna Jensen">
+      <p class="hjaelp">Det navn, bookingen står i.</p>
+    </div>
+    <div class="felt">
+      <label for="phone">Telefonnummer</label>
+      <input id="phone" placeholder="Fx 12 34 56 78">
+      <p class="hjaelp">Vi sender dørkoden til dette nummer.</p>
+    </div>
+    <div class="felt">
+      <label for="arrivalTime">Forventet ankomsttid</label>
+      <input id="arrivalTime" type="time">
+      <p class="hjaelp">Indtast det tidspunkt, du forventer at ankomme.</p>
+    </div>
+    <button>Send henvendelse</button>
   </form>
+
   <p id="svar"></p>
 
   <script>
@@ -24,6 +46,7 @@
       });
       const data = await res.json();
       document.getElementById('svar').textContent = data.besked;
+      document.getElementById('form').style.display = 'none';
     });
   </script>
 </body>

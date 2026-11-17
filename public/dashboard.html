@@ -1,16 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Henvendelser</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
 <body>
   <h1>Henvendelser</h1>
+  <p class="intro">Godkend sene ankomster. Gæsten får dørkoden på SMS med det samme.</p>
 
-  <form id="login" style="display:none">
-    <input id="username" placeholder="Brugernavn">
-    <input id="password" type="password" placeholder="Password">
+  <form id="login" class="kort" style="display:none">
+    <h2>Log ind</h2>
+    <div class="felt">
+      <label for="username">Brugernavn</label>
+      <input id="username">
+    </div>
+    <div class="felt">
+      <label for="password">Password</label>
+      <input id="password" type="password">
+    </div>
     <button>Log ind</button>
     <p id="fejl"></p>
   </form>
 
-  <ul id="liste"></ul>
+  <div class="dashboard">
+    <ul id="liste"></ul>
+  </div>
 
   <script>
     async function hent() {
@@ -28,7 +45,22 @@
 
       arrivals.forEach(a => {
         const li = document.createElement('li');
-        li.textContent = `${a.name} (${a.phone}) kl. ${a.arrivalTime} - ${a.status} `;
+
+        const info = document.createElement('div');
+        info.className = 'info';
+        const navn = document.createElement('div');
+        navn.className = 'navn';
+        navn.textContent = a.name;
+        const detaljer = document.createElement('div');
+        detaljer.className = 'detaljer';
+        detaljer.textContent = `${a.phone} · ankommer kl. ${a.arrivalTime}`;
+        info.append(navn, detaljer);
+
+        const status = document.createElement('span');
+        status.className = `status ${a.status}`;
+        status.textContent = a.status;
+
+        li.append(info, status);
 
         if (a.status === 'afventer') {
           const knap = document.createElement('button');

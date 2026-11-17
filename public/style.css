@@ -1,0 +1,167 @@
+/* Farver og grundværdier */
+:root {
+  --baggrund: #F7F5F0;
+  --flade: #FFFFFF;
+  --tekst: #2B2B28;
+  --daempet: #7C7A73;
+  --kant: #E4E0D7;
+  --accent: #7A8B6F;
+  --accent-moerk: #66765C;
+  --accent-lys: #EEF1EA;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  background: var(--baggrund);
+  color: var(--tekst);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 80px 20px;
+}
+
+/* Overskrifter */
+h1, h2 {
+  font-weight: 500;
+  text-align: center;
+}
+
+h1 {
+  font-size: 46px;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-size: 30px;
+  margin-bottom: 8px;
+}
+
+.intro {
+  text-align: center;
+  color: var(--daempet);
+  max-width: 420px;
+  margin: 0 auto 48px;
+}
+
+/* Kort */
+.kort {
+  background: var(--flade);
+  border: 1px solid var(--kant);
+  border-radius: 12px;
+  padding: 40px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 8px 30px rgba(43, 43, 40, 0.04);
+}
+
+/* Formularer */
+.felt { margin-bottom: 24px; }
+
+label {
+  display: block;
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 18px;
+  color: var(--tekst);
+  background: var(--baggrund);
+  border: 1px solid var(--kant);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--flade);
+}
+
+.hjaelp {
+  font-size: 15px;
+  color: var(--daempet);
+  margin-top: 6px;
+}
+
+button {
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+}
+
+button:hover { background: var(--accent-moerk); }
+
+form button { width: 100%; margin-top: 8px; }
+
+/* Bekræftelse (vises kun, når der står tekst i den) */
+#svar {
+  background: var(--accent-lys);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+}
+
+#svar:empty { display: none; }
+
+#fejl {
+  font-size: 15px;
+  color: #A4543F;
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* Dashboard */
+.dashboard { width: 100%; max-width: 720px; }
+
+#liste { list-style: none; }
+
+#liste li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--flade);
+  border: 1px solid var(--kant);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 12px;
+}
+
+.info { flex: 1; }
+.navn { font-weight: 600; font-size: 19px; }
+.detaljer { font-size: 16px; color: var(--daempet); }
+
+.status {
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: capitalize;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: #F3EEE3;
+  color: #8A7550;
+}
+
+.status.godkendt {
+  background: var(--accent-lys);
+  color: var(--accent-moerk);
+}
+
+#liste button { padding: 6px 16px; font-size: 16px; }
