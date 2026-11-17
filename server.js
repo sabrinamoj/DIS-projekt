@@ -8,12 +8,13 @@ const crypto = require('crypto');
 const twilio = require('twilio');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Middleware: logger metode, URL, statuskode og responstid
+// Middleware: logger port, metode, URL, statuskode og responstid
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
-    console.log(`${req.method} ${req.url} ${res.statusCode} ${Date.now() - start}ms`);
+    console.log(`[${PORT}] ${req.method} ${req.url} ${res.statusCode} ${Date.now() - start}ms`);
   });
   next();
 });
@@ -23,11 +24,9 @@ app.use(cookieParser());
 app.use(express.static('public'));
 
 let db;
-const sessions = new Set();
 const AES_KEY = Buffer.from(process.env.AES_KEY, 'hex');
 const sms = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
 
-// AES: krypterer med nøglen og en tilfældig IV
 function krypter(tekst) {
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-cbc', AES_KEY, iv);
@@ -35,14 +34,12 @@ function krypter(tekst) {
   return iv.toString('hex') + ':' + krypteret;
 }
 
-// AES: dekrypterer med den samme nøgle og den gemte IV
 function dekrypter(data) {
   const [ivHex, krypteret] = data.split(':');
   const decipher = crypto.createDecipheriv('aes-256-cbc', AES_KEY, Buffer.from(ivHex, 'hex'));
   return decipher.update(krypteret, 'hex', 'utf8') + decipher.final('utf8');
 }
 
-// Sender dørkoden som SMS via Twilio
 async function sendDoerkode(id) {
   try {
     const arrival = await db.get('SELECT phone, doorCode FROM arrivals WHERE id = ?', [id]);
@@ -82,17 +79,25 @@ async function start() {
     )
   `);
 
+  // Sessioner i databasen, så begge kopier af appen kan se dem
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY
+    )
+  `);
+
   const findes = await db.get('SELECT * FROM users WHERE username = ?', ['personale']);
   if (!findes) {
     const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
     await db.run('INSERT INTO users (username, password) VALUES (?, ?)', ['personale', hash]);
   }
 
-  app.listen(3000, () => console.log('Kører på http://localhost:3000'));
+  app.listen(PORT, () => console.log(`Kører på http://localhost:${PORT}`));
 }
 
-function kraeverLogin(req, res, next) {
-  if (sessions.has(req.cookies.token)) return next();
+async function kraeverLogin(req, res, next) {
+  const session = await db.get('SELECT token FROM sessions WHERE token = ?', [req.cookies.token]);
+  if (session) return next();
   res.status(401).json({ besked: 'Ikke logget ind' });
 }
 
@@ -102,7 +107,7 @@ app.post('/api/login', async (req, res) => {
 
   if (user && await bcrypt.compare(password, user.password)) {
     const token = crypto.randomUUID();
-    sessions.add(token);
+    await db.run('INSERT INTO sessions (token) VALUES (?)', [token]);
     res.cookie('token', token, { httpOnly: true });
     return res.json({ besked: 'Logget ind' });
   }
@@ -132,7 +137,7 @@ app.put('/api/arrivals/:id', kraeverLogin, async (req, res) => {
   );
   res.json({ besked: 'Godkendt' });
 
-  sendDoerkode(req.params.id); // sendes efter svaret, uden await
+  sendDoerkode(req.params.id);
 });
 
 start();
