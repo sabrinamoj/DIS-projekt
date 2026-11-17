@@ -108,7 +108,7 @@ app.post('/api/login', async (req, res) => {
   if (user && await bcrypt.compare(password, user.password)) {
     const token = crypto.randomUUID();
     await db.run('INSERT INTO sessions (token) VALUES (?)', [token]);
-    res.cookie('token', token, { httpOnly: true });
+    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'strict' });
     return res.json({ besked: 'Logget ind' });
   }
 
